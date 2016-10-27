@@ -22,6 +22,13 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import difflib.Delta;
+import difflib.DiffUtils;
+import difflib.Patch;
+
 /**
  * The RealmBaseRecyclerAdapter class is an abstract utility class for binding RecyclerView UI elements to Realm data.
  * <p>
@@ -33,7 +40,7 @@ import android.view.LayoutInflater;
  * The RealmAdapter will stop receiving updates if the Realm instance providing the {@link OrderedRealmCollection} is
  * closed.
  *
- * @param <T> type of {@link RealmModel} stored in the adapter.
+ * @param <T>  type of {@link RealmModel} stored in the adapter.
  * @param <VH> type of RecyclerView.ViewHolder used in the adapter.
  */
 public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
@@ -43,29 +50,22 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
     protected final Context context;
     private final boolean hasAutoUpdates;
     private final RealmChangeListener listener;
+
     @Nullable
     private OrderedRealmCollection<T> adapterData;
+    private List<T> realmResultSnapshot;
+
+    private final Realm realm;
 
     public RealmRecyclerViewAdapter(@NonNull Context context, @Nullable OrderedRealmCollection<T> data, boolean autoUpdate) {
-        //noinspection ConstantConditions
-        if (context == null) {
-            throw new IllegalArgumentException("Context can not be null");
-        }
-
         this.context = context;
         this.adapterData = data;
-        this.inflater = LayoutInflater.from(context);
         this.hasAutoUpdates = autoUpdate;
 
-        // Right now don't use generics, since we need maintain two different
-        // types of listeners until RealmList is properly supported.
-        // See https://github.com/realm/realm-java/issues/989
-        this.listener = hasAutoUpdates ? new RealmChangeListener() {
-            @Override
-            public void onChange(Object results) {
-                notifyDataSetChanged();
-            }
-        } : null;
+        this.inflater = LayoutInflater.from(context);
+        this.realm = Realm.getDefaultInstance();
+
+        this.listener = hasAutoUpdates ? getRealmChangeListener() : null;
     }
 
     @Override
@@ -178,5 +178,55 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
 
     private boolean isDataValid() {
         return adapterData != null && adapterData.isValid();
+    }
+
+    private RealmChangeListener getRealmChangeListener() {
+        return new RealmChangeListener<RealmResults<T>>() {
+            @Override
+            public void onChange(RealmResults<T> element) {
+                if (realmResultSnapshot != null && !realmResultSnapshot.isEmpty()) {
+                    if (realmResultSnapshot.isEmpty()) {
+                        realmResultSnapshot = realm.copyFromRealm(realmResultSnapshot);
+                        notifyDataSetChanged();
+                        return;
+                    }
+                    Patch patch = DiffUtils.diff(realmResultSnapshot, adapterData);
+                    List<Delta> deltas = patch.getDeltas();
+                    realmResultSnapshot = realm.copyFromRealm(adapterData);
+                    if (!deltas.isEmpty()) {
+                        List<Delta> deleteDeltas = new ArrayList<>();
+                        List<Delta> insertDeltas = new ArrayList<>();
+                        for (final Delta delta : deltas) {
+                            switch (delta.getType()) {
+                                case DELETE:
+                                    deleteDeltas.add(delta);
+                                    break;
+                                case INSERT:
+                                    insertDeltas.add(delta);
+                                    break;
+                                case CHANGE:
+                                    notifyItemRangeChanged(
+                                            delta.getRevised().getPosition(),
+                                            delta.getRevised().size());
+                                    break;
+                            }
+                        }
+                        for (final Delta delta : deleteDeltas) {
+                            notifyItemRangeRemoved(
+                                    delta.getOriginal().getPosition(),
+                                    delta.getOriginal().size());
+                        }
+                        for (final Delta delta : insertDeltas) {
+                            notifyItemRangeInserted(
+                                    delta.getRevised().getPosition(),
+                                    delta.getRevised().size());
+                        }
+                    }
+                } else {
+                    notifyDataSetChanged();
+                    realmResultSnapshot = realm.copyFromRealm(realmResultSnapshot);
+                }
+            }
+        };
     }
 }

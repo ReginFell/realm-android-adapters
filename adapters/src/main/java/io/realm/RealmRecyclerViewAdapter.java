@@ -16,6 +16,7 @@
 
 package io.realm;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.util.DiffUtil;
@@ -44,12 +45,12 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
     private final boolean hasAutoUpdates;
     private final RealmChangeListener realmChangeListener;
 
-    private RealmResults<T> adapterData;
+    private OrderedRealmCollection<T> adapterData;
     private List<T> realmResultSnapshot;
 
     private final Realm realm;
 
-    public RealmRecyclerViewAdapter(@NonNull RealmResults<T> data, boolean autoUpdate) {
+    public RealmRecyclerViewAdapter(Context context, @NonNull OrderedRealmCollection<T> data, boolean autoUpdate) {
         this.adapterData = data;
         this.hasAutoUpdates = autoUpdate;
 
@@ -74,23 +75,12 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
         }
     }
 
-    /**
-     * Returns the current ID for an item. Note that item IDs are not stable so you cannot rely on the item ID being the
-     * same after notifyDataSetChanged() or {@link #updateData(RealmResults)} has been called.
-     *
-     * @param index position of item in the adapter.
-     * @return current item ID.
-     */
-    @Override
-    public long getItemId(final int index) {
-        return index;
-    }
-
     @Override
     public int getItemCount() {
         //noinspection ConstantConditions
         return isDataValid() ? adapterData.size() : 0;
     }
+
 
     /**
      * Returns the item associated with the specified position.
@@ -180,6 +170,7 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
                     DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(difCallback);
                     diffResult.dispatchUpdatesTo((ListUpdateCallback) RealmRecyclerViewAdapter.this);
                     realmResultSnapshot = realm.copyFromRealm(adapterData);
+
                 } else {
                     notifyDataSetChanged();
                     realmResultSnapshot = realm.copyFromRealm(adapterData);
@@ -212,17 +203,17 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
 
     @Override
     public void onInserted(int position, int count) {
-        notifyItemRangeInserted(position, count);
+        notifyItemInserted(position);
     }
 
     @Override
     public void onRemoved(int position, int count) {
-        notifyItemRangeRemoved(position, count);
+        notifyItemRemoved(position);
     }
 
     @Override
     public void onMoved(int fromPosition, int toPosition) {
-        notifyItemMoved(fromPosition, toPosition);
+
     }
 
     @Override

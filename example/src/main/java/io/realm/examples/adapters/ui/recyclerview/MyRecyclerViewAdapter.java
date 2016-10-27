@@ -16,6 +16,7 @@
 
 package io.realm.examples.adapters.ui.recyclerview;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,8 +33,8 @@ public class MyRecyclerViewAdapter extends RealmRecyclerViewAdapter<TimeStamp, M
 
     private final RecyclerViewExampleActivity activity;
 
-    public MyRecyclerViewAdapter(RecyclerViewExampleActivity activity, RealmResults<TimeStamp> data) {
-        super(data, true);
+    public MyRecyclerViewAdapter( RecyclerViewExampleActivity activity, OrderedRealmCollection<TimeStamp> data) {
+        super(activity, data, true);
         this.activity = activity;
     }
 

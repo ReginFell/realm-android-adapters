@@ -32,7 +32,7 @@ public class MyRecyclerViewAdapter extends RealmRecyclerViewAdapter<TimeStamp, M
     private final RecyclerViewExampleActivity activity;
 
     public MyRecyclerViewAdapter(RecyclerViewExampleActivity activity, OrderedRealmCollection<TimeStamp> data) {
-        super(activity, data, true);
+        super(data, true);
         this.activity = activity;
     }
 

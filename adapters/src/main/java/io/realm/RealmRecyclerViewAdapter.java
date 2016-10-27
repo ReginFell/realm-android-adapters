@@ -16,11 +16,9 @@
 
 package io.realm;
 
-import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.RecyclerView;
-import android.view.LayoutInflater;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,24 +43,18 @@ import difflib.Patch;
  */
 public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
 
-    protected final LayoutInflater inflater;
-    @NonNull
-    protected final Context context;
     private final boolean hasAutoUpdates;
     private final RealmChangeListener listener;
 
-    @Nullable
     private OrderedRealmCollection<T> adapterData;
     private List<T> realmResultSnapshot;
 
     private final Realm realm;
 
-    public RealmRecyclerViewAdapter(@NonNull Context context, @Nullable OrderedRealmCollection<T> data, boolean autoUpdate) {
-        this.context = context;
+    public RealmRecyclerViewAdapter(@NonNull OrderedRealmCollection<T> data, boolean autoUpdate) {
         this.adapterData = data;
         this.hasAutoUpdates = autoUpdate;
 
-        this.inflater = LayoutInflater.from(context);
         this.realm = Realm.getDefaultInstance();
 
         this.listener = hasAutoUpdates ? getRealmChangeListener() : null;
@@ -72,7 +64,6 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
     public void onAttachedToRecyclerView(final RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
         if (hasAutoUpdates && isDataValid()) {
-            //noinspection ConstantConditions
             addListener(adapterData);
         }
     }
@@ -81,7 +72,6 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
     public void onDetachedFromRecyclerView(final RecyclerView recyclerView) {
         super.onDetachedFromRecyclerView(recyclerView);
         if (hasAutoUpdates && isDataValid()) {
-            //noinspection ConstantConditions
             removeListener(adapterData);
         }
     }

@@ -34,6 +34,7 @@ public class TimeStamp extends RealmObject {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
+        if (o == null || this.getClass() != o.getClass()) return false;
 
         TimeStamp timeStamp1 = (TimeStamp) o;
 

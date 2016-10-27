@@ -212,24 +212,21 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
 
     @Override
     public void onInserted(int position, int count) {
-        notifyItemInserted(position);
-        notifyItemRangeChanged(position, count);
+        notifyItemRangeInserted(position, count);
     }
 
     @Override
     public void onRemoved(int position, int count) {
-        notifyItemRemoved(position);
-        notifyItemRangeChanged(position, count);
+        notifyItemRangeRemoved(position, count);
     }
 
     @Override
     public void onMoved(int fromPosition, int toPosition) {
-
+        notifyItemMoved(fromPosition, toPosition);
     }
 
     @Override
     public void onChanged(int position, int count, Object payload) {
-        notifyItemChanged(position);
-        notifyItemRangeChanged(position, count);
+        notifyItemRangeChanged(position, count, payload);
     }
 }

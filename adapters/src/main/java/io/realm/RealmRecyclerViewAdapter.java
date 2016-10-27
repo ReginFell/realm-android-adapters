@@ -39,7 +39,7 @@ import java.util.List;
  * @param <T>  type of {@link RealmModel} stored in the adapter.
  * @param <VH> type of RecyclerView.ViewHolder used in the adapter.
  */
-public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends RecyclerView.ViewHolder>
+public abstract class RealmRecyclerViewAdapter<T extends RealmModel & DiffEquals<T>, VH extends RecyclerView.ViewHolder>
         extends RecyclerView.Adapter<VH> implements ListUpdateCallback {
 
     private final boolean hasAutoUpdates;
@@ -192,12 +192,12 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
 
         @Override
         public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-            return realmResultSnapshot.get(oldItemPosition).equals(adapterData.get(newItemPosition));
+            return realmResultSnapshot.get(oldItemPosition).diffEquals(adapterData.get(newItemPosition));
         }
 
         @Override
         public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-            return realmResultSnapshot.get(oldItemPosition).equals(adapterData.get(newItemPosition));
+            return realmResultSnapshot.get(oldItemPosition).diffEquals(adapterData.get(newItemPosition));
         }
     };
 

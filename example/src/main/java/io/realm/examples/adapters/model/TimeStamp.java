@@ -15,9 +15,11 @@
  */
 package io.realm.examples.adapters.model;
 
+import io.realm.DiffEquals;
 import io.realm.RealmObject;
 
-public class TimeStamp extends RealmObject {
+
+public class TimeStamp extends RealmObject implements DiffEquals<TimeStamp> {
 
     public static final String TIMESTAMP = "timeStamp";
 
@@ -32,17 +34,12 @@ public class TimeStamp extends RealmObject {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-
-        TimeStamp timeStamp1 = (TimeStamp) o;
-
-        return getTimeStamp() != null ? getTimeStamp().equals(timeStamp1.getTimeStamp()) : timeStamp1.getTimeStamp() == null;
-
+    public int hashCode() {
+        return getTimeStamp() != null ? getTimeStamp().hashCode() : 0;
     }
 
     @Override
-    public int hashCode() {
-        return getTimeStamp() != null ? getTimeStamp().hashCode() : 0;
+    public boolean diffEquals(TimeStamp o) {
+        return this.getTimeStamp().equals(o.getTimeStamp());
     }
 }

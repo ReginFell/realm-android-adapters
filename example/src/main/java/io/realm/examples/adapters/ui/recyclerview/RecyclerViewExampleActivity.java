@@ -23,7 +23,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 
 import io.realm.Realm;
 import io.realm.examples.adapters.R;
@@ -86,8 +85,7 @@ public class RecyclerViewExampleActivity extends AppCompatActivity {
             @Override
             public void execute(Realm realm) {
                 realm.where(TimeStamp.class).equalTo(TimeStamp.TIMESTAMP, id)
-                        .findAll()
-                        .deleteAllFromRealm();
+                        .findAll().deleteFirstFromRealm();
             }
         });
     }

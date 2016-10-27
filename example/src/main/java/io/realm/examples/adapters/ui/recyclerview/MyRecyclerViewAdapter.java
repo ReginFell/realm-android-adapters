@@ -24,6 +24,7 @@ import android.widget.TextView;
 
 import io.realm.OrderedRealmCollection;
 import io.realm.RealmRecyclerViewAdapter;
+import io.realm.RealmResults;
 import io.realm.examples.adapters.R;
 import io.realm.examples.adapters.model.TimeStamp;
 
@@ -31,7 +32,7 @@ public class MyRecyclerViewAdapter extends RealmRecyclerViewAdapter<TimeStamp, M
 
     private final RecyclerViewExampleActivity activity;
 
-    public MyRecyclerViewAdapter(RecyclerViewExampleActivity activity, OrderedRealmCollection<TimeStamp> data) {
+    public MyRecyclerViewAdapter(RecyclerViewExampleActivity activity, RealmResults<TimeStamp> data) {
         super(data, true);
         this.activity = activity;
     }

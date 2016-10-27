@@ -18,14 +18,11 @@ package io.realm;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v7.util.DiffUtil;
+import android.support.v7.util.ListUpdateCallback;
 import android.support.v7.widget.RecyclerView;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import difflib.Delta;
-import difflib.DiffUtils;
-import difflib.Patch;
 
 /**
  * The RealmBaseRecyclerAdapter class is an abstract utility class for binding RecyclerView UI elements to Realm data.
@@ -41,23 +38,24 @@ import difflib.Patch;
  * @param <T>  type of {@link RealmModel} stored in the adapter.
  * @param <VH> type of RecyclerView.ViewHolder used in the adapter.
  */
-public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
+public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends RecyclerView.ViewHolder>
+        extends RecyclerView.Adapter<VH> implements ListUpdateCallback {
 
     private final boolean hasAutoUpdates;
-    private final RealmChangeListener listener;
+    private final RealmChangeListener realmChangeListener;
 
-    private OrderedRealmCollection<T> adapterData;
+    private RealmResults<T> adapterData;
     private List<T> realmResultSnapshot;
 
     private final Realm realm;
 
-    public RealmRecyclerViewAdapter(@NonNull OrderedRealmCollection<T> data, boolean autoUpdate) {
+    public RealmRecyclerViewAdapter(@NonNull RealmResults<T> data, boolean autoUpdate) {
         this.adapterData = data;
         this.hasAutoUpdates = autoUpdate;
 
         this.realm = Realm.getDefaultInstance();
 
-        this.listener = hasAutoUpdates ? getRealmChangeListener() : null;
+        this.realmChangeListener = hasAutoUpdates ? getRealmChangeListener() : null;
     }
 
     @Override
@@ -78,7 +76,7 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
 
     /**
      * Returns the current ID for an item. Note that item IDs are not stable so you cannot rely on the item ID being the
-     * same after notifyDataSetChanged() or {@link #updateData(OrderedRealmCollection)} has been called.
+     * same after notifyDataSetChanged() or {@link #updateData(RealmResults)} has been called.
      *
      * @param index position of item in the adapter.
      * @return current item ID.
@@ -125,7 +123,7 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
      * @param data the new {@link OrderedRealmCollection} to display.
      */
     @SuppressWarnings("WeakerAccess")
-    public void updateData(@Nullable OrderedRealmCollection<T> data) {
+    public void updateData(@Nullable RealmResults<T> data) {
         if (hasAutoUpdates) {
             if (adapterData != null) {
                 removeListener(adapterData);
@@ -139,28 +137,27 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
         notifyDataSetChanged();
     }
 
+    @SuppressWarnings("unchecked")
     private void addListener(@NonNull OrderedRealmCollection<T> data) {
         if (data instanceof RealmResults) {
             RealmResults realmResults = (RealmResults) data;
-            //noinspection unchecked
-            realmResults.addChangeListener(listener);
+            realmResults.addChangeListener(realmChangeListener);
         } else if (data instanceof RealmList) {
             RealmList realmList = (RealmList) data;
-            //noinspection unchecked
-            realmList.realm.handlerController.addChangeListenerAsWeakReference(listener);
+            realmList.realm.handlerController.addChangeListenerAsWeakReference(realmChangeListener);
         } else {
             throw new IllegalArgumentException("RealmCollection not supported: " + data.getClass());
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void removeListener(@NonNull OrderedRealmCollection<T> data) {
         if (data instanceof RealmResults) {
             RealmResults realmResults = (RealmResults) data;
-            realmResults.removeChangeListener(listener);
+            realmResults.removeChangeListener(realmChangeListener);
         } else if (data instanceof RealmList) {
             RealmList realmList = (RealmList) data;
-            //noinspection unchecked
-            realmList.realm.handlerController.removeWeakChangeListener(listener);
+            realmList.realm.handlerController.removeWeakChangeListener(realmChangeListener);
         } else {
             throw new IllegalArgumentException("RealmCollection not supported: " + data.getClass());
         }
@@ -175,48 +172,64 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel, VH extends 
             @Override
             public void onChange(RealmResults<T> element) {
                 if (realmResultSnapshot != null && !realmResultSnapshot.isEmpty()) {
-                    if (realmResultSnapshot.isEmpty()) {
-                        realmResultSnapshot = realm.copyFromRealm(realmResultSnapshot);
+                    if (adapterData.isEmpty()) {
+                        realmResultSnapshot = realm.copyFromRealm(adapterData);
                         notifyDataSetChanged();
                         return;
                     }
-                    Patch patch = DiffUtils.diff(realmResultSnapshot, adapterData);
-                    List<Delta> deltas = patch.getDeltas();
+                    DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(difCallback);
+                    diffResult.dispatchUpdatesTo((ListUpdateCallback) RealmRecyclerViewAdapter.this);
                     realmResultSnapshot = realm.copyFromRealm(adapterData);
-                    if (!deltas.isEmpty()) {
-                        List<Delta> deleteDeltas = new ArrayList<>();
-                        List<Delta> insertDeltas = new ArrayList<>();
-                        for (final Delta delta : deltas) {
-                            switch (delta.getType()) {
-                                case DELETE:
-                                    deleteDeltas.add(delta);
-                                    break;
-                                case INSERT:
-                                    insertDeltas.add(delta);
-                                    break;
-                                case CHANGE:
-                                    notifyItemRangeChanged(
-                                            delta.getRevised().getPosition(),
-                                            delta.getRevised().size());
-                                    break;
-                            }
-                        }
-                        for (final Delta delta : deleteDeltas) {
-                            notifyItemRangeRemoved(
-                                    delta.getOriginal().getPosition(),
-                                    delta.getOriginal().size());
-                        }
-                        for (final Delta delta : insertDeltas) {
-                            notifyItemRangeInserted(
-                                    delta.getRevised().getPosition(),
-                                    delta.getRevised().size());
-                        }
-                    }
                 } else {
                     notifyDataSetChanged();
-                    realmResultSnapshot = realm.copyFromRealm(realmResultSnapshot);
+                    realmResultSnapshot = realm.copyFromRealm(adapterData);
                 }
             }
         };
+    }
+
+    private final DiffUtil.Callback difCallback = new DiffUtil.Callback() {
+        @Override
+        public int getOldListSize() {
+            return realmResultSnapshot.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return adapterData.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            return realmResultSnapshot.get(oldItemPosition).equals(adapterData.get(newItemPosition));
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            return realmResultSnapshot.get(oldItemPosition).equals(adapterData.get(newItemPosition));
+        }
+    };
+
+    @Override
+    public void onInserted(int position, int count) {
+        notifyItemInserted(position);
+        notifyItemRangeChanged(position, count);
+    }
+
+    @Override
+    public void onRemoved(int position, int count) {
+        notifyItemRemoved(position);
+        notifyItemRangeChanged(position, count);
+    }
+
+    @Override
+    public void onMoved(int fromPosition, int toPosition) {
+
+    }
+
+    @Override
+    public void onChanged(int position, int count, Object payload) {
+        notifyItemChanged(position);
+        notifyItemRangeChanged(position, count);
     }
 }

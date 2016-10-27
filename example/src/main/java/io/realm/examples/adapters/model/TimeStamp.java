@@ -30,4 +30,19 @@ public class TimeStamp extends RealmObject {
     public void setTimeStamp(String timeStamp) {
         this.timeStamp = timeStamp;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        TimeStamp timeStamp1 = (TimeStamp) o;
+
+        return getTimeStamp() != null ? getTimeStamp().equals(timeStamp1.getTimeStamp()) : timeStamp1.getTimeStamp() == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return getTimeStamp() != null ? getTimeStamp().hashCode() : 0;
+    }
 }

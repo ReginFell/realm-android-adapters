@@ -45,12 +45,12 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel & DiffEquals
     private final boolean hasAutoUpdates;
     private final RealmChangeListener realmChangeListener;
 
-    private OrderedRealmCollection<T> adapterData;
+    private RealmResults<T> adapterData;
     private List<T> realmResultSnapshot;
 
     private final Realm realm;
 
-    public RealmRecyclerViewAdapter(Context context, @NonNull OrderedRealmCollection<T> data, boolean autoUpdate) {
+    public RealmRecyclerViewAdapter(Context context, @NonNull RealmResults<T> data, boolean autoUpdate) {
         this.adapterData = data;
         this.hasAutoUpdates = autoUpdate;
 

@@ -56,6 +56,8 @@ public class RecyclerViewExampleActivity extends AppCompatActivity {
         return true;
     }
 
+    private int idT = 0;
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -64,7 +66,8 @@ public class RecyclerViewExampleActivity extends AppCompatActivity {
             realm.executeTransactionAsync(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
-                    realm.createObject(TimeStamp.class).setTimeStamp(timestamp);
+                    realm.createObject(TimeStamp.class, idT).setTimeStamp(timestamp);
+                    idT++;
                 }
             });
             return true;

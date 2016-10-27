@@ -25,7 +25,6 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import io.realm.Realm;
-import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
 import io.realm.examples.adapters.R;
 import io.realm.examples.adapters.model.TimeStamp;
@@ -75,6 +74,8 @@ public class ListViewExampleActivity extends AppCompatActivity {
         return true;
     }
 
+    private int idTi = 0;
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -83,7 +84,10 @@ public class ListViewExampleActivity extends AppCompatActivity {
             realm.executeTransactionAsync(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
-                    realm.createObject(TimeStamp.class).setTimeStamp(timestamp);
+                    TimeStamp timeStamp = realm.createObject(TimeStamp.class);
+                    timeStamp.setTimeStamp(timestamp);
+                    timeStamp.setId(idTi);
+                    idTi++;
                 }
             });
             return true;

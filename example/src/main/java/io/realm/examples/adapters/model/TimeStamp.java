@@ -17,6 +17,7 @@ package io.realm.examples.adapters.model;
 
 import io.realm.DiffEquals;
 import io.realm.RealmObject;
+import io.realm.annotations.PrimaryKey;
 
 
 public class TimeStamp extends RealmObject implements DiffEquals<TimeStamp> {
@@ -24,6 +25,9 @@ public class TimeStamp extends RealmObject implements DiffEquals<TimeStamp> {
     public static final String TIMESTAMP = "timeStamp";
 
     private String timeStamp;
+
+    @PrimaryKey
+    private int id;
 
     public String getTimeStamp() {
         return timeStamp;
@@ -33,6 +37,14 @@ public class TimeStamp extends RealmObject implements DiffEquals<TimeStamp> {
         this.timeStamp = timeStamp;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getId() {
+        return id;
+    }
+
     @Override
     public int hashCode() {
         return getTimeStamp() != null ? getTimeStamp().hashCode() : 0;
@@ -40,6 +52,6 @@ public class TimeStamp extends RealmObject implements DiffEquals<TimeStamp> {
 
     @Override
     public boolean diffEquals(TimeStamp o) {
-        return this.getTimeStamp().equals(o.getTimeStamp());
+        return this.getId() == o.getId();
     }
 }

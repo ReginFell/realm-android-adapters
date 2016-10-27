@@ -20,7 +20,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.util.DiffUtil;
-import android.support.v7.util.ListUpdateCallback;
 import android.support.v7.widget.RecyclerView;
 
 import java.util.List;
@@ -40,7 +39,7 @@ import java.util.List;
  * @param <VH> type of RecyclerView.ViewHolder used in the adapter.
  */
 public abstract class RealmRecyclerViewAdapter<T extends RealmModel & DiffEquals<T>, VH extends RecyclerView.ViewHolder>
-        extends RecyclerView.Adapter<VH> implements ListUpdateCallback {
+        extends RecyclerView.Adapter<VH> {
 
     private final boolean hasAutoUpdates;
     private final RealmChangeListener realmChangeListener;
@@ -168,7 +167,7 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel & DiffEquals
                         return;
                     }
                     DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(difCallback);
-                    diffResult.dispatchUpdatesTo((ListUpdateCallback) RealmRecyclerViewAdapter.this);
+                    diffResult.dispatchUpdatesTo(RealmRecyclerViewAdapter.this);
                     realmResultSnapshot = realm.copyFromRealm(adapterData);
 
                 } else {
@@ -200,24 +199,4 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel & DiffEquals
             return realmResultSnapshot.get(oldItemPosition).diffEquals(adapterData.get(newItemPosition));
         }
     };
-
-    @Override
-    public void onInserted(int position, int count) {
-        notifyItemInserted(position);
-    }
-
-    @Override
-    public void onRemoved(int position, int count) {
-        notifyItemRemoved(position);
-    }
-
-    @Override
-    public void onMoved(int fromPosition, int toPosition) {
-
-    }
-
-    @Override
-    public void onChanged(int position, int count, Object payload) {
-        notifyItemRangeChanged(position, count, payload);
-    }
 }

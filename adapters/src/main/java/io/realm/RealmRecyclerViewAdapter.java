@@ -123,6 +123,7 @@ public abstract class RealmRecyclerViewAdapter<T extends RealmModel & DiffEquals
         }
 
         this.adapterData = data;
+        this.realmResultSnapshot = realm.copyFromRealm(adapterData);
         notifyDataSetChanged();
     }
 
